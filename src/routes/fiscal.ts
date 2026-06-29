@@ -55,6 +55,11 @@ export function registerFiscal(app: FastifyInstance): void {
         asof: asofOf(m, 'reservas_valor'),
         source: srcOf(m, 'reservas_valor'),
       },
+      baseMonetaria: {
+        valorMM: valOf(m, 'base_monetaria'),
+        asof: asofOf(m, 'base_monetaria'),
+        source: srcOf(m, 'base_monetaria'),
+      },
       expectativas: {
         inflacion12m: valOf(m, 'expect_12m'),
         inflacion24m: valOf(m, 'expect_24m'),
