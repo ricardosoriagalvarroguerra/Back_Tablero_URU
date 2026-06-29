@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# env (NO commitear credenciales — Railway inyecta DATABASE_URL/PORT/CORS_ORIGIN)
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+
+# ts cache / build
+*.tsbuildinfo
+dist/
+
+# editor / OS
+.DS_Store
+.vscode/*
+.idea/
