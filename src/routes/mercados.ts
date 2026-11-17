@@ -1,4 +1,4 @@
-// Módulo Mercados — crédito soberano (UBI, bonos, SSLB, ratings).
+// Módulo Mercados — crédito soberano (riesgo país EMBI/UBI, bonos, SSLB, ratings).
 
 import type { FastifyInstance } from 'fastify';
 import { query } from '../db.ts';
@@ -12,20 +12,39 @@ const PERSPECTIVA: Record<string, string> = {
   na: '—',
 };
 
-async function indice(codigo: string): Promise<{ series: number[]; value: number; chg: number }> {
-  const rows = await query<{ valor: number; variacion: number | null }>(
-    `SELECT io.valor, io.variacion
+async function indice(
+  codigo: string,
+): Promise<{ series: number[]; value: number; chg: number; periodos: string[] | undefined }> {
+  const rows = await query<{ valor: number; variacion: number | null; periodo: string | null }>(
+    `SELECT io.valor, io.variacion, io.periodo
        FROM indice_riesgo_observaciones io JOIN indices_riesgo i ON i.id = io.indice_id
       WHERE i.codigo = $1 ORDER BY io.fecha`,
     [codigo],
   );
   const last = rows.at(-1);
-  return { series: rows.map((r) => r.valor), value: last?.valor ?? 0, chg: last?.variacion ?? 0 };
+  const periodos = rows.map((r) => r.periodo);
+  return {
+    series: rows.map((r) => r.valor),
+    value: last?.valor ?? 0,
+    chg: last?.variacion ?? 0,
+    periodos: periodos.length && periodos.every((p) => p != null) ? (periodos as string[]) : undefined,
+  };
+}
+
+function regional(json: string): { pais: string; pb: number }[] | undefined {
+  if (!json) return undefined;
+  try {
+    return JSON.parse(json) as { pais: string; pb: number }[];
+  } catch {
+    return undefined;
+  }
 }
 
 export function registerMercados(app: FastifyInstance): void {
   app.get('/api/mercados', async () => {
-    const [ubi, bonos, ratings, m] = await Promise.all([
+    // Riesgo país: EMBI (JP Morgan) si está cargado; si no, el UBI histórico.
+    const [embi, legacyUbi, bonos, ratings, m] = await Promise.all([
+      indice('EMBI'),
       indice('UBI'),
       query<{ codigo: string; nombre: string; moneda: string; tipo: string; vencimiento: string | null; precio: number | null; rendimiento: number | null; variacion: number | null }>(
         `SELECT codigo, nombre, moneda, tipo, vencimiento, precio, rendimiento, variacion
@@ -50,9 +69,18 @@ export function registerMercados(app: FastifyInstance): void {
     );
 
     const sslbNota = txtOf(m, 'sslb_nota');
+    const ubi = embi.series.length ? embi : legacyUbi;
 
     return {
-      ubi: { value: ubi.value, chg: ubi.chg, series: ubi.series },
+      ubi: {
+        value: ubi.value,
+        chg: ubi.chg,
+        series: ubi.series,
+        periodos: ubi.periodos,
+        indice: txtOf(m, 'riesgo_indice') || undefined,
+        asof: m['riesgo_indice']?.asof ?? undefined,
+        regional: regional(txtOf(m, 'riesgo_regional')),
+      },
       bonos: bonos.map((b) => ({
         id: b.codigo,
         name: b.nombre,
