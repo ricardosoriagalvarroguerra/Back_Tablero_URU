@@ -1,7 +1,7 @@
 {
   "name": "tablero-inteligente-uru-api",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "API (Fastify + pg) que sirve el Tablero Inteligente URU desde la BDR PostgreSQL.",
   "engines": {

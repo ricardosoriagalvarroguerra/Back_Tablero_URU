@@ -23,6 +23,7 @@ interface IndicadorRow {
   extra_valor: string | null;
   extra_tono: 'pos' | 'neg' | 'neutral' | null;
   spark: number[] | null;
+  periodos: (string | null)[] | null;
 }
 
 function toKpi(r: IndicadorRow) {
@@ -37,6 +38,8 @@ function toKpi(r: IndicadorRow) {
     delta: r.variacion ?? 0,
     deltaLabel: r.variacion_etiqueta ?? '',
     spark: r.spark ?? [],
+    // etiquetas de período alineadas con spark (sólo si están todas)
+    periodos: r.periodos && r.periodos.every((p) => p != null) ? r.periodos : undefined,
     source: r.fuente,
     asof: r.asof ?? fechaCorta(r.fecha_dato),
     def: r.definicion,
@@ -49,7 +52,7 @@ function toKpi(r: IndicadorRow) {
 const SELECT_INDICADORES = `
   SELECT id, codigo, nombre, unidad, categoria, sentido, decimales, definicion, asof,
          fuente, fecha_dato, valor, variacion, variacion_etiqueta,
-         extra_label, extra_valor, extra_tono, spark
+         extra_label, extra_valor, extra_tono, spark, periodos
   FROM v_indicadores_actuales
   ORDER BY id`;
 
@@ -66,8 +69,8 @@ export function registerIndicadores(app: FastifyInstance): void {
       [codigo],
     );
     if (!meta) return reply.code(404).send({ error: 'indicador no encontrado' });
-    const serie = await query<{ fecha: string; valor: number }>(
-      `SELECT io.fecha, io.valor
+    const serie = await query<{ fecha: string; valor: number; periodo: string | null }>(
+      `SELECT io.fecha, io.valor, io.periodo
          FROM indicador_observaciones io JOIN indicadores i ON i.id = io.indicador_id
         WHERE i.codigo = $1 ORDER BY io.fecha`,
       [codigo],
