@@ -41,7 +41,7 @@ el servicio:
 | Método y ruta | Módulo | Devuelve |
 |---|---|---|
 | `GET /api/health` | — | ping a la BDR |
-| `GET /api/indicadores` | A | KPIs (valor, delta, extra, spark 12m) |
+| `GET /api/indicadores` | A | KPIs (valor, delta, extra, spark 12m + `periodos`) |
 | `GET /api/indicadores/:codigo` | A | + serie histórica completa |
 | `GET /api/agro` | AG | productos del complejo, novillo, faena, destinos |
 | `GET /api/mercados` | C | UBI, bonos (USD/UYU/UI), SSLB, grado inversor, ratings |
@@ -54,6 +54,7 @@ el servicio:
 | `GET /api/eventos` | E | calendario próximos 30 días |
 | `GET /api/fuentes` | F | estado/latencia de cada fuente |
 | `GET /api/search?q=` | — | búsqueda full-text (noticias) + ILIKE (indicadores) |
+| `GET /api/analisis` | Z | capa analítica vigente (tesis, semáforo, proyecciones, escenarios, riesgos, lecturas) |
 
 ## Estructura
 
@@ -66,7 +67,7 @@ server/src/
 ├── format.ts       # helpers de formato
 └── routes/         # un archivo por módulo (agro, mercados, actividad,
                     #   energia, externo, fiscal, indicadores, noticias,
-                    #   eventos, fuentes) + search
+                    #   eventos, fuentes, analisis) + search
 ```
 
 El frontend ([`../src/useDashboardData.ts`](../src/useDashboardData.ts)) cae a los

@@ -1,13 +1,13 @@
 // Módulo Fiscal & monetario.
 
 import type { FastifyInstance } from 'fastify';
-import { loadMetricas, loadSerie, valOf, txtOf, asofOf, srcOf, notaOf } from '../repo.ts';
+import { loadMetricas, loadSerieConPeriodos, valOf, txtOf, asofOf, srcOf, notaOf } from '../repo.ts';
 
 export function registerFiscal(app: FastifyInstance): void {
   app.get('/api/fiscal', async () => {
     const [m, globalSerie] = await Promise.all([
       loadMetricas('fiscal'),
-      loadSerie('fiscal', 'result_global'),
+      loadSerieConPeriodos('fiscal', 'result_global'),
     ]);
 
     const cumpleVal = valOf(m, 'regla_cumple');
@@ -16,7 +16,8 @@ export function registerFiscal(app: FastifyInstance): void {
       resultadoGlobal: {
         pctPib: valOf(m, 'result_global_pct'),
         periodo: txtOf(m, 'result_global_periodo'),
-        series: globalSerie,
+        series: globalSerie.valores,
+        periodos: globalSerie.periodos,
         source: srcOf(m, 'result_global_pct'),
       },
       resultadoPrimario: {

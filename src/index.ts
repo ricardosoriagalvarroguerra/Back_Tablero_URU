@@ -16,6 +16,7 @@ import { registerNoticias } from './routes/noticias.ts';
 import { registerEventos } from './routes/eventos.ts';
 import { registerFuentes } from './routes/fuentes.ts';
 import { registerSearch } from './routes/search.ts';
+import { registerAnalisis } from './routes/analisis.ts';
 
 const app = Fastify({ logger: true });
 
@@ -37,6 +38,7 @@ registerNoticias(app);
 registerEventos(app);
 registerFuentes(app);
 registerSearch(app);
+registerAnalisis(app);
 
 const shutdown = async () => {
   await app.close();

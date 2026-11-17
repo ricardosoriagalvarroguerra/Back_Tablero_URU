@@ -2,13 +2,13 @@
 
 import type { FastifyInstance } from 'fastify';
 import { query } from '../db.ts';
-import { loadMetricas, loadSerie, valOf, txtOf, asofOf, srcOf } from '../repo.ts';
+import { loadMetricas, loadSerieConPeriodos, valOf, txtOf, asofOf, srcOf } from '../repo.ts';
 
 export function registerActividad(app: FastifyInstance): void {
   app.get('/api/actividad', async () => {
     const [m, pibSerie, rubros, sectores, departamentos] = await Promise.all([
       loadMetricas('actividad'),
-      loadSerie('actividad', 'pib'),
+      loadSerieConPeriodos('actividad', 'pib'),
       query<{ label: string; valor: number }>(`SELECT label, valor FROM ipc_rubros ORDER BY orden`),
       query<{ label: string; valor: number }>(`SELECT label, valor FROM pib_sectores ORDER BY orden`),
       query<{ codigo: string; nombre: string; zona: string | null; valor: number | null; valor_alt: number | null }>(
@@ -21,7 +21,8 @@ export function registerActividad(app: FastifyInstance): void {
         varInteranual: valOf(m, 'pib_var_interanual'),
         anual2025: valOf(m, 'pib_anual2025'),
         trimestral: valOf(m, 'pib_trimestral'),
-        series: pibSerie,
+        series: pibSerie.valores,
+        periodos: pibSerie.periodos,
         asof: asofOf(m, 'pib_var_interanual'),
         source: srcOf(m, 'pib_var_interanual'),
       },
