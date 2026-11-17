@@ -20,6 +20,17 @@ npm run typecheck
 Requiere la BDR creada y poblada (el esquema/seed `db/` vive en el repo del
 frontend, **Front_Tablero_URU**).
 
+## Aprovisionamiento automático de la BDR
+
+Al arrancar, la API compara el hash de `db/schema.sql` + `db/seed.sql` con la tabla
+`seed_meta`. Si cambió (o la base está vacía), aplica schema + seed **en una sola
+transacción** con advisory lock; si algo falla hace ROLLBACK y sigue sirviendo los datos
+anteriores. `GET /api/health` informa la versión cargada (`seed.version`).
+
+- `db/` se copia desde el repo **Front_Tablero_URU** (fuente de verdad): `npm run sync:db`.
+- Para desactivarlo: `DB_AUTO_SEED=false`.
+- La base del tablero se deriva íntegramente del seed: reaplicarlo reemplaza todo su contenido.
+
 ## Despliegue en Railway
 
 Railway autodetecta el proyecto Node y corre `npm start`
@@ -31,6 +42,7 @@ el servicio:
 | `DATABASE_URL` | referencia a la BDR PostgreSQL de Railway (usar la URL **interna** `postgres.railway.internal`; para conexión pública/SSL agregar `?sslmode=require`) |
 | `PORT` | lo inyecta Railway automáticamente (el server escucha en `process.env.PORT`) |
 | `HOST` | `0.0.0.0` (default) |
+| `DB_AUTO_SEED` | opcional; `false` desactiva el auto-aprovisionamiento |
 | `CORS_ORIGIN` | URL pública del frontend (p.ej. `https://front-tablero-uru.up.railway.app`) |
 
 > **No commitear** credenciales: `.env` está en `.gitignore`; en Railway se cargan

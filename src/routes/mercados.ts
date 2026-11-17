@@ -31,14 +31,15 @@ async function indice(
   };
 }
 
-function regional(json: string): { pais: string; pb: number }[] | undefined {
+function parseJson<T>(json: string): T | undefined {
   if (!json) return undefined;
   try {
-    return JSON.parse(json) as { pais: string; pb: number }[];
+    return JSON.parse(json) as T;
   } catch {
     return undefined;
   }
 }
+const regional = (json: string) => parseJson<{ pais: string; pb: number }[]>(json);
 
 export function registerMercados(app: FastifyInstance): void {
   app.get('/api/mercados', async () => {
@@ -81,6 +82,7 @@ export function registerMercados(app: FastifyInstance): void {
         asof: m['riesgo_indice']?.asof ?? undefined,
         regional: regional(txtOf(m, 'riesgo_regional')),
       },
+      ratingsHistoria: parseJson<{ anio: number; sp: string; moodys: string }[]>(txtOf(m, 'ratings_historia')),
       bonos: bonos.map((b) => ({
         id: b.codigo,
         name: b.nombre,
