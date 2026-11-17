@@ -24,6 +24,8 @@ interface IndicadorRow {
   extra_tono: 'pos' | 'neg' | 'neutral' | null;
   spark: number[] | null;
   periodos: (string | null)[] | null;
+  historico: { periodo: string; valor: number }[] | null;
+  historico_nota: string | null;
 }
 
 function toKpi(r: IndicadorRow) {
@@ -40,6 +42,9 @@ function toKpi(r: IndicadorRow) {
     spark: r.spark ?? [],
     // etiquetas de período alineadas con spark (sólo si están todas)
     periodos: r.periodos && r.periodos.every((p) => p != null) ? r.periodos : undefined,
+    // serie anual larga (2015 → hoy); json_agg devuelve valores numéricos
+    historico: r.historico ?? undefined,
+    historicoNota: r.historico_nota ?? undefined,
     source: r.fuente,
     asof: r.asof ?? fechaCorta(r.fecha_dato),
     def: r.definicion,
@@ -52,7 +57,7 @@ function toKpi(r: IndicadorRow) {
 const SELECT_INDICADORES = `
   SELECT id, codigo, nombre, unidad, categoria, sentido, decimales, definicion, asof,
          fuente, fecha_dato, valor, variacion, variacion_etiqueta,
-         extra_label, extra_valor, extra_tono, spark, periodos
+         extra_label, extra_valor, extra_tono, spark, periodos, historico, historico_nota
   FROM v_indicadores_actuales
   ORDER BY id`;
 
