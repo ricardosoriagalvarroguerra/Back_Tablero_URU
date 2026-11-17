@@ -18,6 +18,10 @@ import { registerFuentes } from './routes/fuentes.ts';
 import { registerSearch } from './routes/search.ts';
 import { registerAnalisis } from './routes/analisis.ts';
 import { ensureSeed } from './bootstrap.ts';
+import { registerIngesta } from './routes/ingesta.ts';
+import { registerRegion } from './routes/region.ts';
+import { registerAlertas } from './routes/alertas.ts';
+import { runIngest } from './ingest/index.ts';
 
 const app = Fastify({ logger: true });
 
@@ -44,6 +48,9 @@ registerEventos(app);
 registerFuentes(app);
 registerSearch(app);
 registerAnalisis(app);
+registerIngesta(app);
+registerRegion(app);
+registerAlertas(app);
 
 const shutdown = async () => {
   await app.close();
@@ -65,4 +72,10 @@ try {
 } catch (err) {
   app.log.error(err);
   process.exit(1);
+}
+
+// Ingesta al arrancar (en segundo plano, después del seed): el seed reescribe la
+// base y la ingesta repone lo más nuevo. INGEST_ON_BOOT=false la desactiva.
+if (process.env.INGEST_ON_BOOT !== 'false') {
+  runIngest(app.log).catch((err) => app.log.error({ err }, 'falló la ingesta al arrancar'));
 }

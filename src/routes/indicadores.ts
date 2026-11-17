@@ -26,6 +26,8 @@ interface IndicadorRow {
   periodos: (string | null)[] | null;
   historico: { periodo: string; valor: number }[] | null;
   historico_nota: string | null;
+  fecha_iso: string | null;
+  periodicidad: string;
 }
 
 function toKpi(r: IndicadorRow) {
@@ -45,6 +47,9 @@ function toKpi(r: IndicadorRow) {
     // serie anual larga (2015 → hoy); json_agg devuelve valores numéricos
     historico: r.historico ?? undefined,
     historicoNota: r.historico_nota ?? undefined,
+    // frescura: fecha real del último dato + periodicidad
+    fecha: r.fecha_iso ?? undefined,
+    periodicidad: r.periodicidad,
     source: r.fuente,
     asof: r.asof ?? fechaCorta(r.fecha_dato),
     def: r.definicion,
@@ -57,7 +62,8 @@ function toKpi(r: IndicadorRow) {
 const SELECT_INDICADORES = `
   SELECT id, codigo, nombre, unidad, categoria, sentido, decimales, definicion, asof,
          fuente, fecha_dato, valor, variacion, variacion_etiqueta,
-         extra_label, extra_valor, extra_tono, spark, periodos, historico, historico_nota
+         extra_label, extra_valor, extra_tono, spark, periodos, historico, historico_nota,
+         to_char(fecha_dato, 'YYYY-MM-DD') AS fecha_iso, periodicidad::text AS periodicidad
   FROM v_indicadores_actuales
   ORDER BY id`;
 
