@@ -23,7 +23,9 @@ export const fuenteImf: FuenteIngesta = {
     let filas = 0;
     let valores = 0;
     for (const ind of INDICADORES_REGION) {
-      const json = JSON.parse(await fetchTexto(`${BASE}/${ind}`, {}, 30_000)) as Payload;
+      const texto = await fetchTexto(`${BASE}/${ind}`, {}, 30_000);
+      if (texto.trimStart().startsWith('<')) throw new Error(`el FMI devolvió HTML en vez de JSON (${ind}): posible bloqueo`);
+      const json = JSON.parse(texto) as Payload;
       const porPais = json.values?.[ind] ?? {};
       for (const iso of PAISES_REGION) {
         const serie = porPais[iso] ?? {};

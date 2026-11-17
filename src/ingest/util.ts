@@ -15,8 +15,14 @@ export const asofDia = (iso: string) => etiquetaDia(iso).replace('-', ' ');
 export const isoHoy = (d = new Date()) => d.toISOString().slice(0, 10);
 export const isoMenosDias = (dias: number, d = new Date()) => isoHoy(new Date(d.getTime() - dias * 86_400_000));
 
+/** User-Agent genérico: el FMI responde una página HTML de bloqueo si falta. */
+const USER_AGENT = process.env.INGEST_USER_AGENT ?? 'TableroURU-ingesta/0.9 (+https://github.com)';
+
 export async function fetchTexto(url: string, init: RequestInit = {}, timeoutMs = 20_000): Promise<string> {
-  const res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  const headers = new Headers(init.headers);
+  if (!headers.has('User-Agent')) headers.set('User-Agent', USER_AGENT);
+  if (!headers.has('Accept')) headers.set('Accept', 'application/json, text/xml;q=0.9, */*;q=0.8');
+  const res = await fetch(url, { ...init, headers, signal: AbortSignal.timeout(timeoutMs) });
   if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
   return res.text();
 }
