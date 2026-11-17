@@ -31,6 +31,33 @@ anteriores. `GET /api/health` informa la versión cargada (`seed.version`).
 - Para desactivarlo: `DB_AUTO_SEED=false`.
 - La base del tablero se deriva íntegramente del seed: reaplicarlo reemplaza todo su contenido.
 
+## Ingesta automática (v0.9)
+
+`src/ingest/` tiene un módulo por fuente; cada corrida queda en `ingesta_corridas` y actualiza
+`fuente_estado` con el resultado real.
+
+| Fuente | Qué trae | Destino |
+|---|---|---|
+| `bcu` | dólar interbancario, últimos 15 días (web service SOAP de cotizaciones) | `indicador_observaciones` · `tipo_cambio` (UPSERT + delta) |
+| `imf` | FMI WEO 2015–2027 para ARG BOL BRA CHL COL ECU PER PRY URY | `region_observaciones` |
+
+- `npm run ingest [fuente]` — corrida única (para el **cron de Railway**: servicio aparte con el mismo
+  repo, start command `npm run ingest`, schedule diario, p. ej. `17 11 * * *`).
+- `POST /api/ingesta[?fuente=bcu]` con `Authorization: Bearer $INGEST_TOKEN` (503 si no hay token
+  configurado, 401 si no coincide). `GET /api/ingesta` lista las últimas corridas.
+- Al arrancar la API corre una ingesta en segundo plano después del seed (`INGEST_ON_BOOT=false` la apaga).
+
+> El parser del BCU y el del FMI se probaron contra respuestas simuladas con la forma documentada de cada
+> servicio; si el BCU devuelve otra moneda o grupo, ajustar `BCU_MONEDA` / `BCU_GRUPO`.
+
+## Endpoints v0.9
+
+| Ruta | Devuelve |
+|---|---|
+| `GET /api/region` | `{ vintage, paises, indicadores, datos: { [indicador]: { [iso]: [{anio, valor, proyeccion}] } } }` |
+| `GET /api/alertas` | `[{ id, nivel: 'alta'|'media'|'info', titulo, detalle, indicador, valor, umbral }]` (reglas en `src/alertas.ts`) |
+| `GET /api/indicadores` | además: `fecha` (ISO del último dato) y `periodicidad` (frescura, `src/frescura.ts`) |
+
 ## Despliegue en Railway
 
 Railway autodetecta el proyecto Node y corre `npm start`
@@ -43,6 +70,9 @@ el servicio:
 | `PORT` | lo inyecta Railway automáticamente (el server escucha en `process.env.PORT`) |
 | `HOST` | `0.0.0.0` (default) |
 | `DB_AUTO_SEED` | opcional; `false` desactiva el auto-aprovisionamiento |
+| `INGEST_TOKEN` | secreto para `POST /api/ingesta` (sin él, el endpoint queda deshabilitado) |
+| `INGEST_ON_BOOT` | opcional; `false` evita la ingesta al arrancar |
+| `BCU_MONEDA` / `BCU_GRUPO` | opcionales (default `2225` / `0`) |
 | `CORS_ORIGIN` | URL pública del frontend (p.ej. `https://front-tablero-uru.up.railway.app`) |
 
 > **No commitear** credenciales: `.env` está en `.gitignore`; en Railway se cargan
